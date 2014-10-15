@@ -1,7 +1,7 @@
-require "ftpmvc/gpg/version"
+require 'ftpmvc/gpg/version'
+require 'ftpmvc/gpg/filter'
 
-module Ftpmvc
-  module Gpg
-    # Your code goes here...
+module FTPMVC
+  module GPG
   end
 end

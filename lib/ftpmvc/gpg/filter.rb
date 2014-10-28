@@ -18,7 +18,7 @@ module FTPMVC
       end
 
       def get(path)
-        StringIO.new(@crypto.encrypt(@chain.get(path).read).read)
+        StringIO.new(@crypto.encrypt(GPGME::Data.from_io(@chain.get(path))).read)
       end
     end
   end

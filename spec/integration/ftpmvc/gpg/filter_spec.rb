@@ -37,10 +37,15 @@ describe FTPMVC::GPG::Filter do
     end
   end
   describe 'GET/RETR' do
+    before do
+      allow_any_instance_of(GPGME::Crypto)
+        .to receive(:encrypt)
+        .and_return StringIO.new('encrypted content')      
+    end
     it 'encrypts files content' do
       with_application(app) do |ftp|
         ftp.login
-        expect(get(ftp, '/encrypted/password.txt.gpg').size).to eq 342
+        expect(get(ftp, '/encrypted/password.txt.gpg')).to eq 'encrypted content'
       end
     end
   end

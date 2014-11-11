@@ -37,13 +37,50 @@ describe FTPMVC::GPG::Filter do
 
   describe '#get' do
     before do
+      allow_any_instance_of(GPGME::Crypto)
+        .to receive(:encrypt)
+        .and_return StringIO.new('encrypted secret')
       allow(other_filter)
         .to receive(:get)
         .and_return StringIO.new('secret')
     end
     it 'encrypts original content' do
-      expect(gpg_filter.get('/file.txt.gpg').read.size).to eq 342
+      expect(gpg_filter.get('/file.txt.gpg').read).to eq 'encrypted secret'
     end
 
+    describe '#initialize' do
+      context 'when keys option is given' do
+        it 'imports the keys' do
+          expect(GPGME::Key).to receive(:import).twice
+          FTPMVC::GPG::Filter.new(nil,
+            other_filter,
+            recipients: 'john.doe@gmail.com',
+            keys: ['mykey1', 'mykey2'])
+        end
+      end
+      context 'when key has indentation' do
+        it 'removes indentation' do
+          expect(GPGME::Key)
+            .to receive(:import)
+            .with("-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----\n")
+          FTPMVC::GPG::Filter.new(nil, other_filter, recipients: 'john.doe@gmail.com', keys: [
+            <<-EOF
+              -----BEGIN PGP PUBLIC KEY BLOCK-----
+              ...
+              -----END PGP PUBLIC KEY BLOCK-----
+            EOF
+          ])
+        end
+      end
+    end
+
+    describe '#exists?' do
+      it 'removes .gpg extension from filename' do
+        allow(other_filter)
+          .to receive(:exists?)
+          .with('/secret/passwords.txt')
+        gpg_filter.exists?('/secret/passwords.txt.gpg')
+      end
+    end
   end
 end

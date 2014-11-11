@@ -7,6 +7,7 @@ module FTPMVC
       def initialize(fs, chain, options={})
         super fs, chain
         @crypto = GPGME::Crypto.new recipients: options[:recipients]
+        import_keys(options[:keys]) if options.include?(:keys)
       end
 
       def index(path)
@@ -18,7 +19,27 @@ module FTPMVC
       end
 
       def get(path)
-        StringIO.new(@crypto.encrypt(GPGME::Data.from_io(@chain.get(path))).read)
+        StringIO.new(@crypto.encrypt(original_data(path)).read)
+      end
+
+      def exists?(path)
+        @chain.exists?(remove_extension(path))
+      end
+
+      protected
+
+      def original_data(path)
+        GPGME::Data.from_io(@chain.get(remove_extension(path)))
+      end
+
+      def import_keys(keys)
+        keys.each do |key|
+          GPGME::Key.import(key.gsub(/^\s*/, ''))
+        end
+      end
+
+      def remove_extension(path)
+        path.gsub(/\.gpg$/, '')
       end
     end
   end

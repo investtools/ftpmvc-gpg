@@ -76,10 +76,19 @@ describe FTPMVC::GPG::Filter do
 
     describe '#exists?' do
       it 'removes .gpg extension from filename' do
-        allow(other_filter)
+        expect(other_filter)
           .to receive(:exists?)
           .with('/secret/passwords.txt')
         gpg_filter.exists?('/secret/passwords.txt.gpg')
+      end
+    end
+
+    describe '#directory?' do
+      it 'removes .gpg extension from filename' do
+        expect(other_filter)
+          .to receive(:directory?)
+          .with('/secret/passwords.txt')
+        gpg_filter.directory?('/secret/passwords.txt.gpg')
       end
     end
   end

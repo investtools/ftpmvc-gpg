@@ -6,7 +6,7 @@ module FTPMVC
     class Filter < FTPMVC::Filter
       def initialize(fs, chain, options={})
         super fs, chain
-        @crypto = GPGME::Crypto.new recipients: options[:recipients]
+        @crypto = GPGME::Crypto.new recipients: options[:recipients], always_trust: true
         import_keys(options[:keys]) if options.include?(:keys)
       end
 
@@ -24,6 +24,10 @@ module FTPMVC
 
       def exists?(path)
         @chain.exists?(remove_extension(path))
+      end
+
+      def directory?(path)
+        @chain.directory?(remove_extension(path))
       end
 
       protected

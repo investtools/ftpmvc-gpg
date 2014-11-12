@@ -8,7 +8,29 @@ describe FTPMVC::GPG::Filter do
   let(:app) do
     FTPMVC::Application.new do
       
-      filter FTPMVC::GPG::Filter, recipients: 'john.doe@gmail.com'
+      filter FTPMVC::GPG::Filter, recipients: ['john.doe@gmail.com'], keys: [
+        <<-EOF
+          -----BEGIN PGP PUBLIC KEY BLOCK-----
+          Version: GnuPG v1
+
+          mI0EVGNdYQEEALR159b8du6QsH0lQDx1ImFmdN9qVWHgbcXDK4CKwXMbLwNEsjIn
+          LNkGP7ZPtnvodywlV7G+CDcVDa2r7MrLJdk3/idQ25zBVnL8HndkZiEZHj+WEo5u
+          sR5uZQSshGjWdl2UKWOJoRCW0PEfNBxJeKbCrksaebXjzgXIJl7Mar6TABEBAAG0
+          HUpvaG4gRG9lIDxqb2huLmRvZUBnbWFpbC5jb20+iLgEEwECACIFAlRjXWECGwMG
+          CwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEGp4Yp2MJm5hxOQD/jGvwPiKEgHK
+          AKUqzMv8RpkfP+hkNMa+clhURYRReo0ISWDsb8XUZsZF84ZhwVshlAHqCVdJb13H
+          iK/uSBJpxgEHwzIIn+k1G14HK7DKC7kfheaN0mvS3Tq9sdd5PyWGnQyBiP3OYlmF
+          TWa/KEz5IfKs95nSBa1w3Vc9cjpn1YgxuI0EVGNdYQEEALZkxWWXptwEcdtYwdR6
+          wgXbmFKjeyhRutGJoAR/SwkDoQBqQhTLh6eFKTL9gHWolAJJm4H0pBwVGsVa5su8
+          wXfgIu2Y3rSItwjvof05mlTdqjaMVYM/jiHnfIBVJa/xuQRhkroa1jlK4iVZmKNY
+          8qsj6pvKGB0uOj+BHMMnMMz5ABEBAAGInwQYAQIACQUCVGNdYQIbDAAKCRBqeGKd
+          jCZuYcXBBACtBmIR5o/m2adUCzYfb/mNlh7eM/bvNMeXXmPsazhl5kp05izqy5Z1
+          iSQTnoJ8FKi4ke9GRbpKL4EZ4tWop4QKWAbbojIepR0Q6Ncvv4Ho9N32nmSEEfBU
+          UPgZz+71ilscZiuigmFSDhP368qBG6rmaxgOoK4O+wjVJEJzq4Yc8A==
+          =NH17
+          -----END PGP PUBLIC KEY BLOCK-----
+        EOF
+      ]
       
       filesystem do
         directory :encrypted
@@ -37,15 +59,10 @@ describe FTPMVC::GPG::Filter do
     end
   end
   describe 'GET/RETR' do
-    before do
-      allow_any_instance_of(GPGME::Crypto)
-        .to receive(:encrypt)
-        .and_return StringIO.new('encrypted content')      
-    end
     it 'encrypts files content' do
       with_application(app) do |ftp|
         ftp.login
-        expect(get(ftp, '/encrypted/password.txt.gpg')).to eq 'encrypted content'
+        expect(get(ftp, '/encrypted/password.txt.gpg').size).to eq 213
       end
     end
   end

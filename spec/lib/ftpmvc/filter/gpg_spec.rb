@@ -1,13 +1,13 @@
-require 'ftpmvc/gpg/filter'
+require 'ftpmvc/filter/gpg'
 require 'ftpmvc/file'
 require 'ftpmvc/directory'
 
-describe FTPMVC::GPG::Filter do
+describe FTPMVC::Filter::Gpg do
   before do
-    stub_const 'OtherFilter', Class.new(FTPMVC::Filter)
+    stub_const 'OtherFilter', Class.new(FTPMVC::Filter::Base)
   end
   let(:other_filter) { OtherFilter.new(nil, nil) }
-  let(:gpg_filter) { FTPMVC::GPG::Filter.new(nil, other_filter, recipients: 'john.doe@gmail.com') }
+  let(:gpg_filter) { FTPMVC::Filter::Gpg.new(nil, other_filter, recipients: 'john.doe@gmail.com') }
   describe '#index' do
     before do
       allow(other_filter)
@@ -52,7 +52,7 @@ describe FTPMVC::GPG::Filter do
       context 'when keys option is given' do
         it 'imports the keys' do
           expect(GPGME::Key).to receive(:import).twice
-          FTPMVC::GPG::Filter.new(nil,
+          FTPMVC::Filter::Gpg.new(nil,
             other_filter,
             recipients: 'john.doe@gmail.com',
             keys: ['mykey1', 'mykey2'])
@@ -63,7 +63,7 @@ describe FTPMVC::GPG::Filter do
           expect(GPGME::Key)
             .to receive(:import)
             .with("-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----\n")
-          FTPMVC::GPG::Filter.new(nil, other_filter, recipients: 'john.doe@gmail.com', keys: [
+          FTPMVC::Filter::Gpg.new(nil, other_filter, recipients: 'john.doe@gmail.com', keys: [
             <<-EOF
               -----BEGIN PGP PUBLIC KEY BLOCK-----
               ...

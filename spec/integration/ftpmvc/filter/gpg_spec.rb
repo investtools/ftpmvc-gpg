@@ -4,11 +4,11 @@ require 'ftpmvc/gpg'
 require 'net/ftp'
 
 
-describe FTPMVC::GPG::Filter do
+describe FTPMVC::Filter::Gpg do
   let(:app) do
     FTPMVC::Application.new do
       
-      filter FTPMVC::GPG::Filter, recipients: ['john.doe@gmail.com'], keys: [
+      filter FTPMVC::Filter::Gpg, recipients: ['john.doe@gmail.com'], keys: [
         <<-EOF
           -----BEGIN PGP PUBLIC KEY BLOCK-----
           Version: GnuPG v1

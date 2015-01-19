@@ -1,2 +1,2 @@
 require 'ftpmvc/gpg/version'
-require 'ftpmvc/gpg/filter'
+require 'ftpmvc/filter/gpg'

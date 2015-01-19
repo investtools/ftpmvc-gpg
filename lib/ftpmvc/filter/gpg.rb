@@ -1,9 +1,9 @@
-require 'ftpmvc/filter'
+require 'ftpmvc/filter/base'
 require 'gpgme'
 
 module FTPMVC
-  module GPG
-    class Filter < FTPMVC::Filter
+  module Filter
+    class Gpg < FTPMVC::Filter::Base
       def initialize(fs, chain, options={})
         super fs, chain
         @crypto = GPGME::Crypto.new recipients: options[:recipients], always_trust: true

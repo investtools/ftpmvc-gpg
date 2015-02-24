@@ -1,51 +1,58 @@
 require 'ftpmvc/filter/gpg'
 require 'ftpmvc/file'
 require 'ftpmvc/directory'
+require 'ftpd/stream'
 
 describe FTPMVC::Filter::Gpg do
-  before do
-    stub_const 'OtherFilter', Class.new(FTPMVC::Filter::Base)
+  let(:other_filter_class) do
+    Class.new(FTPMVC::Filter::Base) do
+      attr_reader :received_stream
+      def put(path, stream)
+        @received_stream = stream
+      end
+    end
   end
-  let(:other_filter) { OtherFilter.new(nil, nil) }
+  let(:other_filter) { other_filter_class.new(nil, nil) }
   let(:gpg_filter) { FTPMVC::Filter::Gpg.new(nil, other_filter, recipients: 'john.doe@gmail.com') }
-  describe '#index' do
-    before do
-      allow(other_filter)
-        .to receive(:index)
-        .and_return [ FTPMVC::File.new(original_filename), FTPMVC::Directory.new('documents') ]
-    end
-    let(:original_filename) { 'secret.txt' }
-    it 'adds .gpg extension to files returned by chain' do
-      expect(gpg_filter.index('/').map(&:name)).to include 'secret.txt.gpg'
-    end
-    context 'when file already has .gpg as extensions' do
-      let(:original_filename) { 'secret.txt.gpg' }
-      it 'keeps filename untouched' do
+    describe '#index' do
+      before do
+        allow(other_filter)
+          .to receive(:index)
+          .and_return [ FTPMVC::File.new(original_filename), FTPMVC::Directory.new(name: 'documents') ]
+      end
+      let(:original_filename) { 'secret.txt' }
+      it 'adds .gpg extension to files returned by chain' do
         expect(gpg_filter.index('/').map(&:name)).to include 'secret.txt.gpg'
       end
-    end
-    it 'keeps directory names untouched' do
-      expect(gpg_filter.index('/').map(&:name)).to include 'documents'
-    end
-    context 'when file already has .gpg as extensions' do
-      let(:original_filename) { 'secret.txt.gpg' }
-      it 'keeps filename unchanged' do
-        expect(gpg_filter.index('/').map(&:name)).to include 'secret.txt.gpg'
+      context 'when file already has .gpg as extensions' do
+        let(:original_filename) { 'secret.txt.gpg' }
+        it 'keeps filename untouched' do
+          expect(gpg_filter.index('/').map(&:name)).to include 'secret.txt.gpg'
+        end
+      end
+      it 'keeps directory names untouched' do
+        expect(gpg_filter.index('/').map(&:name)).to include 'documents'
+      end
+      context 'when file already has .gpg as extensions' do
+        let(:original_filename) { 'secret.txt.gpg' }
+        it 'keeps filename unchanged' do
+          expect(gpg_filter.index('/').map(&:name)).to include 'secret.txt.gpg'
+        end
       end
     end
-  end
 
-  describe '#get' do
-    before do
-      allow_any_instance_of(GPGME::Crypto)
-        .to receive(:encrypt)
-        .and_return StringIO.new('encrypted secret')
-      allow(other_filter)
-        .to receive(:get)
-        .and_return StringIO.new('secret')
-    end
-    it 'encrypts original content' do
-      expect(gpg_filter.get('/file.txt.gpg').read).to eq 'encrypted secret'
+    describe '#get' do
+      before do
+        allow_any_instance_of(GPGME::Crypto)
+          .to receive(:encrypt)
+          .and_return StringIO.new('encrypted secret')
+        allow(other_filter)
+          .to receive(:get)
+          .and_return StringIO.new('secret')
+      end
+      it 'encrypts original content' do
+        expect(gpg_filter.get('/file.txt.gpg').read).to eq 'encrypted secret'
+      end
     end
 
     describe '#initialize' do
@@ -90,6 +97,25 @@ describe FTPMVC::Filter::Gpg do
           .with('/secret/passwords.txt')
         gpg_filter.directory?('/secret/passwords.txt.gpg')
       end
+    end
+
+  describe '#put' do
+    let(:stream) { Ftpd::Stream.new(StringIO.new('encrypted content'), 'B') }
+    before do
+      allow_any_instance_of(GPGME::Crypto)
+        .to receive(:decrypt)
+        .with('encrypted content')
+        .and_return GPGME::Data.new('decrypted content')
+    end
+    it 'removes .pgp extension from filename' do
+      expect(other_filter)
+        .to receive(:put)
+        .with('/secret/passwords.txt', kind_of(Ftpd::Stream))
+      gpg_filter.put('/secret/passwords.txt.pgp', stream)
+    end
+    it 'decrypts the stream' do
+      gpg_filter.put('/secret/passwords.txt.pgp', stream)
+      expect(other_filter.received_stream.read).to eq 'decrypted content'
     end
   end
 end

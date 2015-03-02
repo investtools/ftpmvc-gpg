@@ -85,8 +85,8 @@ describe FTPMVC::Filter::Gpg do
         StringIO.new('secret')
       end
 
-      def put(path, stream)
-        @received_data = stream.read
+      def put(path, input)
+        @received_data = input.read_all
       end
     end
   end

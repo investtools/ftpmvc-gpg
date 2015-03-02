@@ -1,14 +1,14 @@
 require 'ftpmvc/filter/gpg'
+require 'ftpmvc/string_input'
 require 'ftpmvc/file'
 require 'ftpmvc/directory'
-require 'ftpd/stream'
 
 describe FTPMVC::Filter::Gpg do
   let(:other_filter_class) do
     Class.new(FTPMVC::Filter::Base) do
-      attr_reader :received_stream
-      def put(path, stream)
-        @received_stream = stream
+      attr_reader :input
+      def put(path, input)
+        @input = input
       end
     end
   end
@@ -100,7 +100,7 @@ describe FTPMVC::Filter::Gpg do
     end
 
   describe '#put' do
-    let(:stream) { Ftpd::Stream.new(StringIO.new('encrypted content'), 'B') }
+    let(:input) { FTPMVC::StringInput.new('encrypted content') }
     before do
       allow_any_instance_of(GPGME::Crypto)
         .to receive(:decrypt)
@@ -110,12 +110,12 @@ describe FTPMVC::Filter::Gpg do
     it 'removes .pgp extension from filename' do
       expect(other_filter)
         .to receive(:put)
-        .with('/secret/passwords.txt', kind_of(Ftpd::Stream))
-      gpg_filter.put('/secret/passwords.txt.pgp', stream)
+        .with('/secret/passwords.txt', kind_of(FTPMVC::Input))
+      gpg_filter.put('/secret/passwords.txt.pgp', input)
     end
-    it 'decrypts the stream' do
-      gpg_filter.put('/secret/passwords.txt.pgp', stream)
-      expect(other_filter.received_stream.read).to eq 'decrypted content'
+    it 'decrypts the input' do
+      gpg_filter.put('/secret/passwords.txt.pgp', input)
+      expect(other_filter.input.read_all).to eq 'decrypted content'
     end
   end
 end

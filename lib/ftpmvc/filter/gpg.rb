@@ -1,6 +1,6 @@
 require 'ftpmvc/filter/base'
+require 'ftpmvc/gpg/input'
 require 'gpgme'
-require 'ftpd/stream'
 
 module FTPMVC
   module Filter
@@ -32,12 +32,8 @@ module FTPMVC
         @chain.directory?(remove_extension(path))
       end
 
-      def put(path, stream)
-        buffer = ''
-        while bytes = stream.read
-          buffer << bytes
-        end
-        @chain.put(remove_extension(path), ::Ftpd::Stream.new(@crypto.decrypt(buffer), 'B'))
+      def put(path, input)
+        @chain.put(remove_extension(path), FTPMVC::GPG::Input.new(@crypto.decrypt(input.read_all)))
       end
 
       protected

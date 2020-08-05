@@ -8,7 +8,9 @@ module FTPMVC
       def initialize(fs, chain, options={})
         super fs, chain
         @crypto = GPGME::Crypto.new(
-          password: options[:passphrase], recipients: options[:recipients], always_trust: true)
+          password: options[:passphrase], recipients: options[:recipients],
+          always_trust: true, pinentry_mode: GPGME::PINENTRY_MODE_LOOPBACK
+        )
         import_keys(options[:keys]) if options.include?(:keys)
       end
 
